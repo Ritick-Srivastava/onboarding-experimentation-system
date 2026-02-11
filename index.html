@@ -193,6 +193,7 @@ import js
 import matplotlib.pyplot as plt
 import io, base64
 import numpy as np
+from pyodide.ffi import create_proxy
 from src.simulation import DataSimulator
 from src.metrics import MetricCalculator
 from src.analysis.stats import StatisticalTest
@@ -206,7 +207,7 @@ def update_val(e):
 
 # Add event listeners for sliders
 for slider_id in ['users', 'cr', 'lift']:
-    js.document.getElementById(slider_id).addEventListener('input', js.create_proxy(update_val))
+    js.document.getElementById(slider_id).addEventListener('input', create_proxy(update_val))
 
 def run_simulation(e):
     # Disable button during run
@@ -299,11 +300,11 @@ def create_plot(control_df, treatment_df, cr, lift):
     js.document.getElementById('plot-area').innerHTML = f'<img src="data:image/png;base64,{img_str}" class="w-full h-auto rounded-xl">'
 
 # Attach main listener
-js.document.getElementById('run-btn').addEventListener('click', js.create_proxy(run_simulation))
+js.document.getElementById('run-btn').addEventListener('click', create_proxy(run_simulation))
 
 # Hide loading overlay when done
 js.document.getElementById('loading-overlay').style.opacity = '0'
-js.setTimeout(js.create_proxy(lambda: js.document.getElementById('loading-overlay').remove()), 500)
+js.setTimeout(create_proxy(lambda: js.document.getElementById('loading-overlay').remove()), 500)
     </script>
 </body>
 
