@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Onboarding Experimentation Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
-    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2023.11.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2023.11.1/core.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
@@ -34,18 +34,56 @@
         input[type="range"] {
             accent-color: #3b82f6;
         }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 
 <body class="min-h-screen p-4 md:p-8">
-    <py-config style="display:none">
+    <div id="loading-overlay">
+        <div class="spinner mb-4"></div>
+        <p class="text-slate-400 font-medium">Initializing Analysis Engine...</p>
+    </div>
+
+    <py-config>
         packages = ["pandas", "numpy", "scipy", "matplotlib"]
         [[fetch]]
         files = ["src/simulation.py", "src/metrics.py", "src/analysis/stats.py"]
     </py-config>
 
     <div class="max-w-7xl mx-auto">
-        <!-- Header -->
         <header class="mb-12 text-center">
             <h1
                 class="text-5xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
@@ -55,7 +93,6 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <!-- Sidebar Controls -->
             <aside class="lg:col-span-1 space-y-6">
                 <div class="glass p-6 rounded-2xl">
                     <h2 class="text-xl font-semibold mb-6 flex items-center">
@@ -66,12 +103,11 @@
                         </svg>
                         Parameters
                     </h2>
-
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-400 mb-1">Users: <span id="users-val"
                                     class="text-blue-400">5000</span></label>
-                            <input type="range" id="users" min="100" max="10000" step="100" value="5000" class="w-full">
+                            <input type="range" id="users" min="500" max="10000" step="100" value="5000" class="w-full">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-400 mb-1">Control CR: <span id="cr-val"
@@ -84,7 +120,6 @@
                             <input type="range" id="lift" min="-10" max="20" step="1" value="5" class="w-full">
                         </div>
                     </div>
-
                     <button id="run-btn"
                         class="w-full mt-8 py-3 px-4 vibrant-blue rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-blue-500/20">
                         Run Simulation
@@ -99,9 +134,7 @@
                 </div>
             </aside>
 
-            <!-- Main Results Area -->
             <main class="lg:col-span-3 space-y-8">
-                <!-- Summary Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="glass p-6 rounded-2xl border-l-4 border-blue-500">
                         <p class="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Metric</p>
@@ -117,7 +150,6 @@
                     </div>
                 </div>
 
-                <!-- Visualization -->
                 <div class="glass p-8 rounded-2xl overflow-hidden min-h-[400px]">
                     <h2 class="text-xl font-semibold mb-6">Posterior Distributions</h2>
                     <div id="plot-area" class="flex justify-center items-center h-full">
@@ -125,7 +157,6 @@
                     </div>
                 </div>
 
-                <!-- Comparison Table -->
                 <div class="glass rounded-2xl overflow-hidden">
                     <table class="w-full text-left">
                         <thead class="bg-slate-800/50 border-b border-slate-700">
@@ -136,7 +167,7 @@
                                 <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Verdict</th>
                             </tr>
                         </thead>
-                        <tbody id="comparison-body" class="divide-y divide-slate-800">
+                        <tbody class="divide-y divide-slate-800">
                             <tr class="hover:bg-slate-800/20 transition-colors">
                                 <td class="px-6 py-4 font-semibold">Frequentist</td>
                                 <td id="freq-primary" class="px-6 py-4">---</td>
@@ -156,87 +187,124 @@
         </div>
     </div>
 
-    <py-script style="display:none">
-        import js
-        import matplotlib.pyplot as plt
-        import io, base64
-        import numpy as np
-        from src.simulation import DataSimulator
-        from src.metrics import MetricCalculator
-        from src.analysis.stats import StatisticalTest
+    <!-- Hidden code blocks to prevent flash -->
+    <script type="py">
+import js
+import matplotlib.pyplot as plt
+import io, base64
+import numpy as np
+from src.simulation import DataSimulator
+from src.metrics import MetricCalculator
+from src.analysis.stats import StatisticalTest
 
-        def update_val(e):
-        # Mapping UI IDs to label display IDs
-        ids = {'users': 'users-val', 'cr': 'cr-val', 'lift': 'lift-val'}
-        target_id = e.target.id
-        val = e.target.value
-        suffix = "%" if target_id in ['cr', 'lift'] else ""
-        js.document.getElementById(ids[target_id]).innerHTML = f"{val}{suffix}"
+def update_val(e):
+    ids = {'users': 'users-val', 'cr': 'cr-val', 'lift': 'lift-val'}
+    target_id = e.target.id
+    val = e.target.value
+    suffix = "%" if target_id in ['cr', 'lift'] else ""
+    js.document.getElementById(ids[target_id]).innerHTML = f"{val}{suffix}"
 
-        # Add event listeners for sliders
-        for slider_id in ['users', 'cr', 'lift']:
-        js.document.getElementById(slider_id).addEventListener('input', js.create_proxy(update_val))
+# Add event listeners for sliders
+for slider_id in ['users', 'cr', 'lift']:
+    js.document.getElementById(slider_id).addEventListener('input', js.create_proxy(update_val))
 
-        def run_simulation(e):
+def run_simulation(e):
+    # Disable button during run
+    btn = js.document.getElementById('run-btn')
+    btn.disabled = True
+    btn.innerHTML = "Processing..."
+    
+    try:
         # Get values
         n_users = int(js.document.getElementById('users').value)
         cr = float(js.document.getElementById('cr').value) / 100.0
         lift = float(js.document.getElementById('lift').value) / 100.0
 
-        # Run logic
+        # Simulation
         sim = DataSimulator(n_users=n_users)
         df = sim.generate_data(control_conversion_rate=cr, treatment_lift=lift)
-
         control_df = df[df['group'] == 'control']
         treatment_df = df[df['group'] == 'treatment']
-
+        
+        # Stats
         test = StatisticalTest()
         results = test.analyze_experiment(control_df, treatment_df)
 
-        # UI Updates for Conversion Rate
-        conv_data = results['conversion_rate']
-
-        # Frequentist Display
-        p_val = conv_data['frequentist']['p_value']
-        sig = "YES" if conv_data['frequentist']['significant'] else "NO"
+        # UI Updates
+        conv = results['conversion_rate']
+        
+        # Freq
+        p_val = conv['frequentist']['p_value']
+        sig = conv['frequentist']['significant']
         js.document.getElementById('stat-p-value').innerHTML = f"{p_val:.4f}"
         js.document.getElementById('freq-primary').innerHTML = f"p={p_val:.4f}"
-        js.document.getElementById('freq-secondary').innerHTML = f"Sig: {sig}"
-        js.document.getElementById('freq-verdict').innerHTML = "SHIP" if sig == "YES" else "WAIT"
+        js.document.getElementById('freq-secondary').innerHTML = "Significant: YES" if sig else "Significant: NO"
+        js.document.getElementById('freq-verdict').innerHTML = "SHIP" if sig else "WAIT"
 
-        # Bayesian Display
-        prob_better = conv_data['bayesian']['prob_t_better']
-        exp_loss = conv_data['bayesian']['expected_loss']
-        js.document.getElementById('stat-prob-better').innerHTML = f"{prob_better:.2%}"
-        js.document.getElementById('bay-primary').innerHTML = f"Prob Better: {prob_better:.2%}"
-        js.document.getElementById('bay-secondary').innerHTML = f"Loss: {exp_loss:.4f}"
+        # Bay
+        prob = conv['bayesian']['prob_t_better']
+        loss = conv['bayesian']['expected_loss']
+        js.document.getElementById('stat-prob-better').innerHTML = f"{prob:.2%}"
+        js.document.getElementById('bay-primary').innerHTML = f"Prob Better: {prob:.2%}"
+        js.document.getElementById('bay-secondary').innerHTML = f"Exp Loss: {loss:.4f}"
+        
+        b_ship = prob > 0.95 and loss < 0.001
+        js.document.getElementById('bay-verdict').innerHTML = "SHIP" if b_ship else "WAIT"
 
-        b_verdict = "SHIP" if (prob_better > 0.95 and exp_loss < 0.001) else "WAIT"
-            js.document.getElementById('bay-verdict').innerHTML=b_verdict # Overall Recommendation if sig=="YES" and
-            b_verdict=="SHIP" : rec="Strong Consensus: The data suggests shipping the treatment." elif b_verdict=="SHIP"
-            : rec="Bayesian recommendation: SHIP (High confidence/Low risk), though Frequentist hasn't peaked yet."
-            else: rec="Wait for more data. No clear significance detected."
-            js.document.getElementById('recommendation').innerHTML=rec # Plotting create_plot(control_df, treatment_df,
-            cr, lift) def create_plot(control_df, treatment_df, cr, lift): # Simple simulation of distributions for
-            visualization # In a real app we'd use the actual samples from BayesianAnalysis, # but for simplicity we
-            simulate here. from scipy.stats import beta c_success=control_df['completed_onboarding'].sum()
-            c_total=len(control_df) t_success=treatment_df['completed_onboarding'].sum() t_total=len(treatment_df)
-            x=np.linspace(max(0, cr - 0.15), min(1, cr + lift + 0.15), 500) y_c=beta.pdf(x, 1 + c_success, 1 + c_total -
-            c_success) y_t=beta.pdf(x, 1 + t_success, 1 + t_total - t_success) plt.figure(figsize=(10, 5),
-            facecolor='none' ) plt.plot(x, y_c, label='Control' , color='#3b82f6' , linewidth=3) plt.fill_between(x,
-            y_c, alpha=0.1, color='#3b82f6' ) plt.plot(x, y_t, label='Treatment' , color='#8b5cf6' , linewidth=3)
-            plt.fill_between(x, y_t, alpha=0.1, color='#8b5cf6' ) plt.title('Posterior Distributions (Conversion Rate)',
-            color='#f8fafc' , fontsize=14, pad=20) plt.legend(facecolor='#1e293b' , edgecolor='none' ,
-            labelcolor='#f8fafc' ) plt.gca().set_facecolor('none') plt.gca().spines['top'].set_visible(False)
-            plt.gca().spines['right'].set_visible(False) plt.gca().tick_params(colors='#64748b' ) plt.grid(alpha=0.1) #
-            Save plot as PNG string buf=io.BytesIO() plt.savefig(buf, format='png' , transparent=True,
-            bbox_inches='tight' ) plt.close() img_str=base64.b64encode(buf.getvalue()).decode('utf-8')
-            js.document.getElementById('plot-area').innerHTML=f'<img src="data:image/png;base64,{img_str}"
-            class="w-full h-auto rounded-xl">'
+        # Recommendation
+        if sig and b_ship:
+            rec = "Strong Consensus: The data suggests shipping the treatment."
+        elif b_ship:
+            rec = "Bayesian recommends SHIP (High confidence/Low risk), but Frequentist is inconclusive."
+        else:
+            rec = "Wait for more data. No clear significance detected yet."
+        js.document.getElementById('recommendation').innerHTML = rec
 
-            # Init
-            js.document.getElementById('run-btn').addEventListener('click', js.create_proxy(run_simulation))
-    </py-script>
+        # Plot
+        create_plot(control_df, treatment_df, cr, lift)
+    finally:
+        btn.disabled = False
+        btn.innerHTML = "Run Simulation"
+
+def create_plot(control_df, treatment_df, cr, lift):
+    from scipy.stats import beta
+    
+    c_s = control_df['completed_onboarding'].sum()
+    c_t = len(control_df)
+    t_s = treatment_df['completed_onboarding'].sum()
+    t_t = len(treatment_df)
+    
+    x = np.linspace(max(0, cr - 0.15), min(1, cr + lift + 0.15), 500)
+    y_c = beta.pdf(x, 1 + c_s, 1 + c_t - c_s)
+    y_t = beta.pdf(x, 1 + t_s, 1 + t_t - t_s)
+    
+    plt.figure(figsize=(10, 5), facecolor='none')
+    plt.plot(x, y_c, label='Control', color='#3b82f6', linewidth=3)
+    plt.fill_between(x, y_c, alpha=0.1, color='#3b82f6')
+    plt.plot(x, y_t, label='Treatment', color='#8b5cf6', linewidth=3)
+    plt.fill_between(x, y_t, alpha=0.1, color='#8b5cf6')
+    
+    plt.title('Posterior Distributions', color='#f8fafc', fontsize=14, pad=20)
+    plt.legend(facecolor='#1e293b', edgecolor='none', labelcolor='#f8fafc')
+    plt.gca().set_facecolor('none')
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().tick_params(colors='#64748b')
+    plt.grid(alpha=0.1)
+    
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', transparent=True, bbox_inches='tight')
+    plt.close()
+    img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
+    js.document.getElementById('plot-area').innerHTML = f'<img src="data:image/png;base64,{img_str}" class="w-full h-auto rounded-xl">'
+
+# Attach main listener
+js.document.getElementById('run-btn').addEventListener('click', js.create_proxy(run_simulation))
+
+# Hide loading overlay when done
+js.document.getElementById('loading-overlay').style.opacity = '0'
+js.setTimeout(js.create_proxy(lambda: js.document.getElementById('loading-overlay').remove()), 500)
+    </script>
 </body>
 
 </html>
