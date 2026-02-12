@@ -11,8 +11,8 @@ def cli():
 
 @cli.command()
 @click.option('--users', default=1000, help='Number of users to simulate')
-@click.option('--control-rate', default=0.20, help='Control group conversion rate')
-@click.option('--lift', default=0.05, help='Expected lift in treatment group')
+@click.option('--control-rate', default=0.20, help='Control group conversion rate (0-1)')
+@click.option('--lift', default=0.05, help='Relative lift in treatment group (e.g., 0.05 for 5% relative increase)')
 @click.option('--output', default='experiment_data.csv', help='Output file for data')
 def simulate(users, control_rate, lift, output):
     """Simulate user data for the experiment."""

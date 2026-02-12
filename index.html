@@ -4,35 +4,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onboarding Experimentation Dashboard</title>
+    <title>SaaS Experimentation Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://pyscript.net/releases/2023.11.1/core.css" />
     <script type="module" src="https://pyscript.net/releases/2023.11.1/core.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
+            background-color: #0a0f1e;
+            color: #e2e8f0;
         }
 
         .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
 
-        .vibrant-blue {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        .metric-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .vibrant-purple {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px -10px rgba(59, 130, 246, 0.15);
         }
 
-        input[type="range"] {
-            accent-color: #3b82f6;
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-amber {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
 
         #loading-overlay {
@@ -41,7 +66,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: #0f172a;
+            background: #0a0f1e;
             z-index: 100;
             display: flex;
             flex-direction: column;
@@ -51,30 +76,30 @@
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(59, 130, 246, 0.1);
-            border-top: 4px solid #3b82f6;
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top: 3px solid #3b82f6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
             100% {
                 transform: rotate(360deg);
             }
         }
+
+        input[type="range"] {
+            accent-color: #3b82f6;
+        }
     </style>
 </head>
 
-<body class="min-h-screen p-4 md:p-8">
+<body class="min-h-screen p-6 md:p-10">
     <div id="loading-overlay">
-        <div class="spinner mb-4"></div>
-        <p class="text-slate-400 font-medium">Initializing Analysis Engine...</p>
+        <div class="spinner mb-6"></div>
+        <p class="text-slate-400 font-medium tracking-wide">Initializing Analytics Engine...</p>
     </div>
 
     <py-config>
@@ -83,107 +108,141 @@
         files = ["src/simulation.py", "src/metrics.py", "src/analysis/stats.py"]
     </py-config>
 
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-12 text-center">
-            <h1
-                class="text-5xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                Experimentation Dashboard
-            </h1>
-            <p class="text-slate-400 text-lg">Bayesian & Frequentist Analysis Framework</p>
+    <div class="max-w-7xl mx-auto space-y-10">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-center md:text-left">
+                <h1
+                    class="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
+                    Experimentation Analytics
+                </h1>
+                <p class="text-slate-500 text-sm mt-1">Bayesian vs Frequentist Analysis Console</p>
+            </div>
+
+            <div class="glass px-6 py-4 rounded-2xl flex items-center gap-8">
+                <div>
+                    <label class="block text-[10px] uppercase tracking-widest text-slate-500 mb-1">Total Users</label>
+                    <div class="flex items-center gap-3">
+                        <input type="range" id="users" min="1000" max="20000" step="1000" value="8000"
+                            class="w-24 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                        <span id="users-val" class="text-sm font-semibold text-blue-400 min-w-[50px]">8,000</span>
+                    </div>
+                </div>
+                <div class="h-8 w-px bg-white/5"></div>
+                <button id="run-btn"
+                    class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-6 rounded-lg transition-all shadow-lg shadow-blue-500/20 active:scale-95">
+                    Run Simulation
+                </button>
+            </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <aside class="lg:col-span-1 space-y-6">
-                <div class="glass p-6 rounded-2xl">
-                    <h2 class="text-xl font-semibold mb-6 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
-                            </path>
-                        </svg>
-                        Parameters
-                    </h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-400 mb-1">Users: <span id="users-val"
-                                    class="text-blue-400">5000</span></label>
-                            <input type="range" id="users" min="500" max="10000" step="100" value="5000" class="w-full">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-400 mb-1">Control CR: <span id="cr-val"
-                                    class="text-blue-400">20%</span></label>
-                            <input type="range" id="cr" min="5" max="50" step="1" value="20" class="w-full">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-400 mb-1">Expected Lift: <span
-                                    id="lift-val" class="text-blue-400">5%</span></label>
-                            <input type="range" id="lift" min="-10" max="20" step="1" value="5" class="w-full">
-                        </div>
-                    </div>
-                    <button id="run-btn"
-                        class="w-full mt-8 py-3 px-4 vibrant-blue rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-blue-500/20">
-                        Run Simulation
-                    </button>
+        <!-- Top Section: Key Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass p-6 rounded-2xl metric-card">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Control CR</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 id="metric-control-cr" class="text-3xl font-bold">--</h2>
+                    <span id="control-users" class="text-[10px] text-slate-600 font-medium">--</span>
                 </div>
+            </div>
+            <div class="glass p-6 rounded-2xl metric-card">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Treatment CR</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 id="metric-treatment-cr" class="text-3xl font-bold">--</h2>
+                    <span id="treatment-users" class="text-[10px] text-slate-600 font-medium">--</span>
+                </div>
+            </div>
+            <div class="glass p-6 rounded-2xl metric-card border-l-2 border-blue-500/30">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Absolute Lift</p>
+                <h2 id="metric-abs-lift" class="text-3xl font-bold text-blue-400">--</h2>
+            </div>
+            <div class="glass p-6 rounded-2xl metric-card border-l-2 border-indigo-500/30">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Relative Lift</p>
+                <h2 id="metric-rel-lift" class="text-3xl font-bold text-indigo-400">--</h2>
+            </div>
+        </div>
 
-                <div class="glass p-6 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50">
-                    <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Recommendation</h3>
-                    <div id="recommendation" class="text-lg font-medium text-slate-300 italic">
-                        Adjust parameters and run simulation...
+        <!-- Middle Section: Statistical Detail -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Frequentist -->
+            <div class="glass p-8 rounded-3xl space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        Frequentist
+                    </h3>
+                    <span id="freq-verdict" class="badge">--</span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-6">
+                    <div>
+                        <p class="text-[10px] uppercase text-slate-500 mb-1">P-Value</p>
+                        <p id="stat-p-value" class="text-xl font-medium">--</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase text-slate-500 mb-1">Status</p>
+                        <p id="stat-freq-sig" class="text-xl font-medium tracking-tight">--</p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-[10px] uppercase text-slate-500 mb-1">95% Confidence Interval (Diff)</p>
+                        <p id="stat-conf-int" class="text-xl font-medium text-blue-300 font-mono">--</p>
                     </div>
                 </div>
-            </aside>
+            </div>
 
-            <main class="lg:col-span-3 space-y-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="glass p-6 rounded-2xl border-l-4 border-blue-500">
-                        <p class="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Metric</p>
-                        <h3 class="text-2xl font-bold">Conversion Rate</h3>
+            <!-- Bayesian -->
+            <div class="glass p-8 rounded-3xl space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        Bayesian
+                    </h3>
+                    <span id="bay-verdict" class="badge">--</span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-6">
+                    <div>
+                        <p class="text-[10px] uppercase text-slate-500 mb-1">Prob T > C</p>
+                        <p id="stat-prob-better" class="text-xl font-medium">--</p>
                     </div>
-                    <div class="glass p-6 rounded-2xl border-l-4 border-blue-400">
-                        <p class="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">P-Value</p>
-                        <h3 id="stat-p-value" class="text-2xl font-bold">---</h3>
+                    <div>
+                        <p class="text-[10px] uppercase text-slate-500 mb-1">Expected Loss</p>
+                        <p id="stat-exp-loss" class="text-xl font-medium text-slate-300">--</p>
                     </div>
-                    <div class="glass p-6 rounded-2xl border-l-4 border-purple-500">
-                        <p class="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Prob T > C</p>
-                        <h3 id="stat-prob-better" class="text-2xl font-bold">---</h3>
+                    <div class="col-span-2">
+                        <p class="text-[10px] uppercase text-slate-500 mb-1">95% Credible Interval (Diff)</p>
+                        <p id="stat-cred-int" class="text-xl font-medium text-indigo-300 font-mono">--</p>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="glass p-8 rounded-2xl overflow-hidden min-h-[400px]">
-                    <h2 class="text-xl font-semibold mb-6">Posterior Distributions</h2>
-                    <div id="plot-area" class="flex justify-center items-center h-full">
-                        <div class="text-slate-600 animate-pulse text-lg">Charts will appear after simulation</div>
-                    </div>
-                </div>
+        <!-- Visual Section: Plot -->
+        <div class="glass p-10 rounded-3xl min-h-[450px] flex flex-col items-center">
+            <h3 class="text-lg font-semibold self-start mb-2">Posterior Distribution</h3>
+            <p class="text-xs text-slate-500 self-start mb-8 tracking-wide">Estimated conversion probability
+                distribution overlap</p>
+            <div id="plot-area" class="w-full flex-1 flex items-center justify-center">
+                <div class="text-slate-600 animate-pulse font-medium">Run simulation to view analysis...</div>
+            </div>
+        </div>
 
-                <div class="glass rounded-2xl overflow-hidden">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-800/50 border-b border-slate-700">
-                            <tr>
-                                <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Framework</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Primary Metric</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Secondary</th>
-                                <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Verdict</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-800">
-                            <tr class="hover:bg-slate-800/20 transition-colors">
-                                <td class="px-6 py-4 font-semibold">Frequentist</td>
-                                <td id="freq-primary" class="px-6 py-4">---</td>
-                                <td id="freq-secondary" class="px-6 py-4">---</td>
-                                <td id="freq-verdict" class="px-6 py-4">---</td>
-                            </tr>
-                            <tr class="hover:bg-slate-800/20 transition-colors">
-                                <td class="px-6 py-4 font-semibold">Bayesian</td>
-                                <td id="bay-primary" class="px-6 py-4">---</td>
-                                <td id="bay-secondary" class="px-6 py-4">---</td>
-                                <td id="bay-verdict" class="px-6 py-4 text-blue-400">---</td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <!-- Bottom Section: Final Decision Panel -->
+        <div class="max-w-3xl mx-auto glass p-8 rounded-3xl border border-white/10 flex flex-col items-center">
+            <div class="flex items-center gap-12 mb-8">
+                <div class="text-center">
+                    <p class="text-[10px] uppercase text-slate-500 mb-2">Frequentist</p>
+                    <span id="final-freq-badge" class="badge min-w-[80px] inline-block">--</span>
                 </div>
-            </main>
+                <div class="text-slate-800 text-2xl font-thin">/</div>
+                <div class="text-center">
+                    <p class="text-[10px] uppercase text-slate-500 mb-2">Bayesian</p>
+                    <span id="final-bay-badge" class="badge min-w-[80px] inline-block">--</span>
+                </div>
+            </div>
+            <div class="max-w-lg text-center">
+                <p id="decision-summary" class="text-slate-400 italic text-sm leading-relaxed">
+                    Adjust simulation parameters and execute the analysis engine for decision support.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -195,114 +254,154 @@ import io, base64
 import numpy as np
 from pyodide.ffi import create_proxy
 from src.simulation import DataSimulator
-from src.metrics import MetricCalculator
 from src.analysis.stats import StatisticalTest
 
 def update_val(e):
-    ids = {'users': 'users-val', 'cr': 'cr-val', 'lift': 'lift-val'}
-    target_id = e.target.id
-    val = e.target.value
-    suffix = "%" if target_id in ['cr', 'lift'] else ""
-    js.document.getElementById(ids[target_id]).innerHTML = f"{val}{suffix}"
+    val = int(e.target.value)
+    js.document.getElementById('users-val').innerHTML = f"{val:,}"
 
-# Add event listeners for sliders
-for slider_id in ['users', 'cr', 'lift']:
-    js.document.getElementById(slider_id).addEventListener('input', create_proxy(update_val))
+js.document.getElementById('users').addEventListener('input', create_proxy(update_val))
 
 def run_simulation(e):
-    # Disable button during run
     btn = js.document.getElementById('run-btn')
     btn.disabled = True
     btn.innerHTML = "Processing..."
     
     try:
-        # Get values
         n_users = int(js.document.getElementById('users').value)
-        cr = float(js.document.getElementById('cr').value) / 100.0
-        lift = float(js.document.getElementById('lift').value) / 100.0
-
-        # Simulation
+        
+        # Real-world subtle lift (relative 5%)
         sim = DataSimulator(n_users=n_users)
-        df = sim.generate_data(control_conversion_rate=cr, treatment_lift=lift)
+        # Using subtle random variations for first run
+        df = sim.generate_data(control_conversion_rate=0.13, treatment_lift=0.04) # ~4% relative lift
+        
         control_df = df[df['group'] == 'control']
         treatment_df = df[df['group'] == 'treatment']
         
-        # Stats
         test = StatisticalTest()
         results = test.analyze_experiment(control_df, treatment_df)
-
-        # UI Updates
         conv = results['conversion_rate']
         
-        # Freq
-        p_val = conv['frequentist']['p_value']
-        sig = conv['frequentist']['significant']
-        js.document.getElementById('stat-p-value').innerHTML = f"{p_val:.4f}"
-        js.document.getElementById('freq-primary').innerHTML = f"p={p_val:.4f}"
-        js.document.getElementById('freq-secondary').innerHTML = "Significant: YES" if sig else "Significant: NO"
-        js.document.getElementById('freq-verdict').innerHTML = "SHIP" if sig else "WAIT"
+        # 1. Update Key Metrics (with fallbacks for cached stats modules)
+        c_cr = conv.get('metrics', {}).get('control_cr', control_df['completed_onboarding'].mean())
+        t_cr = conv.get('metrics', {}).get('treatment_cr', treatment_df['completed_onboarding'].mean())
+        c_count = conv.get('metrics', {}).get('control_count', len(control_df))
+        t_count = conv.get('metrics', {}).get('treatment_count', len(treatment_df))
 
-        # Bay
-        prob = conv['bayesian']['prob_t_better']
-        loss = conv['bayesian']['expected_loss']
+        js.document.getElementById('metric-control-cr').innerHTML = f"{c_cr:.2%}"
+        js.document.getElementById('metric-treatment-cr').innerHTML = f"{t_cr:.2%}"
+        js.document.getElementById('control-users').innerHTML = f"n={c_count}"
+        js.document.getElementById('treatment-users').innerHTML = f"n={t_count}"
+        
+        # Get lift data
+        # Frequentist results might be in different formats depending on cache
+        f_results = conv['frequentist']
+        abs_l = f_results.get('abs_lift', t_cr - c_cr)
+        rel_l = f_results.get('rel_lift', (t_cr / c_cr - 1) if c_cr != 0 else 0)
+        
+        js.document.getElementById('metric-abs-lift').innerHTML = f"{abs_l:+.2%}"
+        js.document.getElementById('metric-rel-lift').innerHTML = f"{rel_l:+.1%}"
+        
+        # 2. Update Frequentist
+        p_val = f_results['p_value']
+        sig = f_results['significant']
+        js.document.getElementById('stat-p-value').innerHTML = f"{p_val:.4f}"
+        js.document.getElementById('stat-freq-sig').innerHTML = "Significant" if sig else "Not Significant"
+        
+        f_badge = js.document.getElementById('freq-verdict')
+        f_final = js.document.getElementById('final-freq-badge')
+        f_badge.innerHTML = f_final.innerHTML = "SHIP" if sig else "WAIT"
+        f_badge.className = f_final.className = "badge badge-green" if sig else "badge badge-amber"
+        
+        # Calculate dynamic fallback for CI if not in cache
+        se_diff = np.sqrt((c_cr * (1 - c_cr) / c_count) + (t_cr * (1 - t_cr) / t_count))
+        moe = 1.96 * se_diff
+        ci_l = f_results.get('conf_int_lower', abs_l - moe)
+        ci_u = f_results.get('conf_int_upper', abs_l + moe)
+        js.document.getElementById('stat-conf-int').innerHTML = f"[{ci_l:+.2%}, {ci_u:+.2%}]"
+        
+        # 3. Update Bayesian
+        b_results = conv['bayesian']
+        prob = b_results['prob_t_better']
+        loss = b_results['expected_loss']
+        
+        # Calculate dynamic fallback for Credible Interval if not in cache
+        if 'cred_int_lower' not in b_results:
+            from scipy.stats import beta
+            c_s, t_s = control_df['completed_onboarding'].sum(), treatment_df['completed_onboarding'].sum()
+            cs = beta.rvs(1 + c_s, 1 + c_count - c_s, size=10000)
+            ts = beta.rvs(1 + t_s, 1 + t_count - t_s, size=10000)
+            diffs = ts - cs
+            cr_l, cr_u = np.percentile(diffs, [2.5, 97.5])
+        else:
+            cr_l, cr_u = b_results['cred_int_lower'], b_results['cred_int_upper']
+        
         js.document.getElementById('stat-prob-better').innerHTML = f"{prob:.2%}"
-        js.document.getElementById('bay-primary').innerHTML = f"Prob Better: {prob:.2%}"
-        js.document.getElementById('bay-secondary').innerHTML = f"Exp Loss: {loss:.4f}"
+        js.document.getElementById('stat-exp-loss').innerHTML = f"{loss:.5f}"
+        js.document.getElementById('stat-cred-int').innerHTML = f"[{cr_l:+.2%}, {cr_u:+.2%}]"
         
         b_ship = prob > 0.95 and loss < 0.001
-        js.document.getElementById('bay-verdict').innerHTML = "SHIP" if b_ship else "WAIT"
-
-        # Recommendation
+        b_badge = js.document.getElementById('bay-verdict')
+        b_final = js.document.getElementById('final-bay-badge')
+        b_badge.innerHTML = b_final.innerHTML = "SHIP" if b_ship else "WAIT"
+        b_badge.className = b_final.className = "badge badge-green" if b_ship else "badge badge-amber"
+        
+        # 4. Summary Logic
         if sig and b_ship:
-            rec = "Strong Consensus: The data suggests shipping the treatment."
+            sum_text = "Consensus: Both methodologies indicate a statistically significant and low-risk improvement. Ready to ship."
         elif b_ship:
-            rec = "Bayesian recommends SHIP (High confidence/Low risk), but Frequentist is inconclusive."
+            sum_text = "Bayesian indicates high confidence with low risk. Frequentist results is borderline but not significant yet."
+        elif sig:
+            sum_text = "Frequentist is significant, but Bayesian risk (Expected Loss) suggests potential for lower performance."
         else:
-            rec = "Wait for more data. No clear significance detected yet."
-        js.document.getElementById('recommendation').innerHTML = rec
-
-        # Plot
-        create_plot(control_df, treatment_df, cr, lift)
+            sum_text = "Neither framework finds sufficient evidence to support a ship decision. Continue data collection."
+        js.document.getElementById('decision-summary').innerHTML = sum_text
+        
+        # 5. Render Plot
+        create_plot(control_df, treatment_df, c_cr)
+        
     finally:
         btn.disabled = False
         btn.innerHTML = "Run Simulation"
 
-def create_plot(control_df, treatment_df, cr, lift):
+def create_plot(control_df, treatment_df, c_cr):
     from scipy.stats import beta
     
-    c_s = control_df['completed_onboarding'].sum()
-    c_t = len(control_df)
-    t_s = treatment_df['completed_onboarding'].sum()
-    t_t = len(treatment_df)
+    c_s, c_t = control_df['completed_onboarding'].sum(), len(control_df)
+    t_s, t_t = treatment_df['completed_onboarding'].sum(), len(treatment_df)
     
-    x = np.linspace(max(0, cr - 0.15), min(1, cr + lift + 0.15), 500)
+    # Adaptive X-axis
+    x = np.linspace(max(0, c_cr - 0.06), min(1, c_cr + 0.08), 500)
     y_c = beta.pdf(x, 1 + c_s, 1 + c_t - c_s)
     y_t = beta.pdf(x, 1 + t_s, 1 + t_t - t_s)
     
-    plt.figure(figsize=(10, 5), facecolor='none')
-    plt.plot(x, y_c, label='Control', color='#3b82f6', linewidth=3)
-    plt.fill_between(x, y_c, alpha=0.1, color='#3b82f6')
-    plt.plot(x, y_t, label='Treatment', color='#8b5cf6', linewidth=3)
-    plt.fill_between(x, y_t, alpha=0.1, color='#8b5cf6')
+    plt.figure(figsize=(10, 4), facecolor='none')
+    plt.plot(x, y_c, label='Control', color='#3b82f6', linewidth=2, alpha=0.8)
+    plt.fill_between(x, y_c, alpha=0.05, color='#3b82f6')
+    plt.plot(x, y_t, label='Treatment', color='#818cf8', linewidth=2, alpha=0.8)
+    plt.fill_between(x, y_t, alpha=0.1, color='#818cf8')
     
-    plt.title('Posterior Distributions', color='#f8fafc', fontsize=14, pad=20)
-    plt.legend(facecolor='#1e293b', edgecolor='none', labelcolor='#f8fafc')
+    # Styling
     plt.gca().set_facecolor('none')
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
-    plt.gca().tick_params(colors='#64748b')
-    plt.grid(alpha=0.1)
+    plt.gca().spines['left'].set_color('#1e293b')
+    plt.gca().spines['bottom'].set_color('#1e293b')
+    plt.gca().tick_params(colors='#64748b', labelsize=8)
+    plt.grid(alpha=0.03, color='#e2e8f0')
+    
+    legend = plt.legend(frameon=False, fontsize=8)
+    for text in legend.get_texts(): text.set_color('#94a3b8')
     
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', transparent=True, bbox_inches='tight')
+    plt.savefig(buf, format='png', transparent=True, dpi=120)
     plt.close()
     img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
-    js.document.getElementById('plot-area').innerHTML = f'<img src="data:image/png;base64,{img_str}" class="w-full h-auto rounded-xl">'
+    js.document.getElementById('plot-area').innerHTML = f'<img src="data:image/png;base64,{img_str}" class="w-full max-w-4xl">'
 
-# Attach main listener
 js.document.getElementById('run-btn').addEventListener('click', create_proxy(run_simulation))
 
-# Hide loading overlay when done
+# Initial fade out
 js.document.getElementById('loading-overlay').style.opacity = '0'
 js.setTimeout(create_proxy(lambda: js.document.getElementById('loading-overlay').remove()), 500)
     </script>

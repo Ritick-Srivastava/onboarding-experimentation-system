@@ -29,7 +29,8 @@ class DataSimulator:
         Returns:
             pd.DataFrame: Simulated user data.
         """
-        np.random.seed(42)  # For reproducibility
+        # Removed fixed seed to allow for live, unique simulations on every run
+        # np.random.seed(42)  
         
         # Assign groups
         groups = np.random.choice(['control', 'treatment'], 
@@ -53,7 +54,11 @@ class DataSimulator:
         # Treatment
         treatment_mask = df['group'] == 'treatment'
         n_treatment = treatment_mask.sum()
-        treatment_conversion = control_conversion_rate + treatment_lift
+        
+        # Calculate treatment conversion using relative lift
+        # treatment_lift is now expected as a relative percentage (e.g., 0.05 for 5% lift)
+        treatment_conversion = control_conversion_rate * (1 + treatment_lift)
+        
         # Clamp between 0 and 1
         treatment_conversion = max(0.0, min(1.0, treatment_conversion))
         
